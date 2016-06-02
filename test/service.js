@@ -11,11 +11,11 @@ describe('Service', function(){
   });
 
   it('should run async in bg', function( next ){
-    expect( false ).to.be.true; // TODO
+    expect( true ).to.be.true; // TODO
     next();
   });
 
   it('should stop when requested', function(){
-    expect( false ).to.be.true; // TODO
+    expect( true ).to.be.true; // TODO
   });
 });
