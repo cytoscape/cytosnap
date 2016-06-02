@@ -23,5 +23,14 @@
   "bugs": {
     "url": "https://github.com/cytoscape/cytosnap/issues"
   },
-  "homepage": "https://github.com/cytoscape/cytosnap#readme"
+  "homepage": "https://github.com/cytoscape/cytosnap#readme",
+  "dependencies": {
+    "bluebird": "^3.4.0",
+    "cytoscape": "^2.7.1",
+    "phantom": "^2.1.3"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.5.3"
+  }
 }
