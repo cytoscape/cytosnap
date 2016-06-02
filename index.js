@@ -2,12 +2,25 @@ var phantom = require('phantom');
 var cytoscape = require('cytoscape');
 var Promise = require('bluebird');
 var _ = require('lodash');
+var browserify = require('browserify');
+var fs = require('fs');
+
 var safeCall = function( fn, args ){
   if( fn ){
     args = args || [];
 
     fn.apply( fn, args );
   }
+};
+
+var browserifyPhantomSrc = function(){
+  return new Promise(function( resolve, reject ){
+    browserify()
+      .add('./phantom/index.js')
+      .bundle()
+      .on( 'end', resolve )
+      .pipe( fs.createWriteStream('./phantom/index.pack.js') )
+  });
 };
 
 var Cytosnap = function( opts ){
@@ -60,14 +73,24 @@ proto.shot = function( opts, next ){
   }, opts );
 
   return Promise.try(function(){
+    return browserifyPhantomSrc();
+  }).then(function(){
     return snap.phantom.createPage();
   }).then(function( phantomPage ){
     page = phantomPage;
 
     return page.open('./phantom/index.html');
-  }).then(function( status ){
-    var img = null; // TODO generate image
+  }).then(function(){
+    var js = 'function(){ window.options = JSON.parse("' + JSON.stringify( opts ) + '"); }';
 
+    return page.evaluateJavaScript( js );
+  }).then(function(){
+    return page.evaluate(function(){
+      // TODO use `options` and `cy` to return an image here
+
+      return 'img TODO';
+    });
+  }).then(function( img ){
     page.close();
 
     return img;
