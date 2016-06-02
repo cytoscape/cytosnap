@@ -13,7 +13,7 @@ var safeCall = function( fn, args ){
   }
 };
 
-var browserifyPhantomSrc = function(){
+var browserifyPhantomSrc = _.memoize( function(){
   return new Promise(function( resolve, reject ){
     browserify()
       .add('./phantom/index.js')
@@ -21,7 +21,7 @@ var browserifyPhantomSrc = function(){
       .on( 'end', resolve )
       .pipe( fs.createWriteStream('./phantom/index.pack.js') )
   });
-};
+}, function(){ return 1; } );
 
 var Cytosnap = function( opts ){
   if( !(this instanceof Cytosnap) ){
