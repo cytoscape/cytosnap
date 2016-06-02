@@ -8,7 +8,7 @@ describe('Output', function(){
   beforeEach(function( done ){ // setup
     snap = cytosnap();
 
-    snap.start( done );
+    snap.start().then( done );
   });
 
   afterEach(function( done ){ // teardown
@@ -19,8 +19,6 @@ describe('Output', function(){
 
   it('should be an existing file', function( done ){
     snap.shot().then(function( img ){
-      console.log( img );
-
       expect( img ).to.exist;
     }).then( done );
   });

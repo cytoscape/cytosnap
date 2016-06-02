@@ -5,12 +5,20 @@ var _ = require('lodash');
 var browserify = require('browserify');
 var fs = require('fs');
 
-var safeCall = function( fn, args ){
-  if( fn ){
-    args = args || [];
+var callbackifyValue = function( fn ){
+  return function( val ){
+    if( _.isFunction(fn) ){ fn( null, val ); }
 
-    fn.apply( fn, args );
-  }
+    return val;
+  };
+};
+
+var callbackifyError = function( fn ){
+  return function( err ){
+    if( _.isFunction(fn) ){ fn( err ); }
+
+    throw err;
+  };
 };
 
 var browserifyPhantomSrc = _.memoize( function(){
@@ -21,7 +29,7 @@ var browserifyPhantomSrc = _.memoize( function(){
       .on( 'end', resolve )
       .pipe( fs.createWriteStream('./phantom/index.pack.js') )
   });
-}, function(){ return 1; } );
+}, function(){ return 'staticKey'; } );
 
 var Cytosnap = function( opts ){
   if( !(this instanceof Cytosnap) ){
@@ -47,9 +55,7 @@ proto.start = function( next ){
     snap.phantom = phantomInstance;
 
     snap.running = true;
-  }).then(function(){
-    safeCall( next );
-  });
+  }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 
 proto.stop = function( next ){
@@ -59,9 +65,7 @@ proto.stop = function( next ){
     snap.phantom.exit();
   }).then(function(){
     snap.running = false;
-  }).then(function(){
-    safeCall( next );
-  });
+  }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 
 proto.shot = function( opts, next ){
@@ -70,6 +74,14 @@ proto.shot = function( opts, next ){
 
   opts = _.assign( {
     // defaults
+    graph: {
+      elements: [],
+      style: [],
+      layout: undefined
+    },
+    image: {
+      format: 'png'
+    }
   }, opts );
 
   return Promise.try(function(){
@@ -81,24 +93,38 @@ proto.shot = function( opts, next ){
 
     return page.open('./phantom/index.html');
   }).then(function(){
-    var js = 'function(){ window.options = JSON.parse("' + JSON.stringify( opts ) + '"); }';
+    var js = 'function(){ window.options = JSON.parse(\'' + JSON.stringify( opts ) + '\'); }';
 
     return page.evaluateJavaScript( js );
   }).then(function(){
-    return page.evaluate(function(){
-      // TODO use `options` and `cy` to return an image here
+    var finishing = new Promise(function( resolve, reject ){
+      page.on('onAlert', function( msg ){
+        resolve( msg );
+      });
+    });
 
-      return 'img TODO';
+    var evalling = page.evaluate(function(){
+      cy.style().fromJson( options.graph.style );
+
+      cy.add( options.graph.elements );
+
+      cy.on('layoutstop', function(){
+        alert('layoutstop');
+      });
+
+      cy.layout( options.graph.layout );
+    });
+
+    return Promise.all([ finishing, evalling ]);
+  }).then(function(){
+    return page.evaluate(function(){
+      return cy[ options.image.format ]( options.image );
     });
   }).then(function( img ){
     page.close();
 
     return img;
-  }).then(function( img ){
-    safeCall( next, [ img ] );
-
-    return img;
-  });
+  }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 
 module.exports = Cytosnap;
