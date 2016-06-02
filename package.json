@@ -1,0 +1,27 @@
+{
+  "name": "cytosnap",
+  "version": "0.1.0",
+  "description": "Render images of Cytoscape.js graphs on the server",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cytoscape/cytosnap.git"
+  },
+  "keywords": [
+    "cytoscape",
+    "graph",
+    "network",
+    "image",
+    "export",
+    "server"
+  ],
+  "author": "Max Franz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cytoscape/cytosnap/issues"
+  },
+  "homepage": "https://github.com/cytoscape/cytosnap#readme"
+}
