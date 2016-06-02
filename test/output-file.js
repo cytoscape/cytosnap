@@ -5,6 +5,8 @@ var cytosnap = require('..');
 describe('Output', function(){
   var snap;
 
+  this.timeout( 10000 );
+
   beforeEach(function( done ){ // setup
     snap = cytosnap();
 
@@ -22,21 +24,37 @@ describe('Output', function(){
       elements: [
         {} // 1 node
       ],
-      returns: 'stream'
+      resolvesTo: 'stream'
     }).then(function( img ){
       expect( img ).to.exist;
-
+      return img;
+    }).then(function( img ){
       // put the image in the fs for manual verification
-      var out = require('fs').createWriteStream('./test/img.png');
-      img.pipe( out );
+      return new Promise(function( resolve ){
+        var out = require('fs').createWriteStream('./test/img.png');
+
+        img.pipe( out );
+
+        out.on('finish', resolve);
+      });
     }).then( done );
   });
 
-  it('should be a png when so specified', function(){
-    expect( true ).to.be.true; // TODO
+  it('should be a png when so specified', function( done ){
+    snap.shot({
+      format: 'png',
+      resolvesTo: 'base64uri'
+    }).then(function( img ){
+      expect( img.indexOf('image/png') ).to.be.at.least(0);
+    }).then( done );
   });
 
-  it('should be a jpg when so specified', function(){
-    expect( true ).to.be.true; // TODO
+  it('should be a jpg when so specified', function( done ){
+    snap.shot({
+      format: 'jpg',
+      resolvesTo: 'base64uri'
+    }).then(function( img ){
+      expect( img.indexOf('image/jpeg') ).to.be.at.least(0);
+    }).then( done );
   });
 });

@@ -65,22 +65,32 @@ Generate a snapshot of a graph:
 
 ```js
 var defaultOptions = {
+  resolvesTo: 'base64uri', // output, one of 'base64uri' (default), 'base64', or 'stream'
+
   // cytoscape.js init options
-    elements: undefined, // cytoscape.js elements json
-    style: undefined, // a cytoscape.js stylesheet in json format
-    layout: undefined // a cytoscape.js layout options object
+  elements: undefined, // cytoscape.js elements json
+  style: undefined, // a cytoscape.js stylesheet in json format
+  layout: undefined // a cytoscape.js layout options object
+
   // cytoscape.js image export options
-    format: 'png', // 'png' or 'jpg'
-    bg: undefined, // a css colour for the background (transparent by default)
-    full: false, // whether to export the current viewport view (false, default) or the entire graph (true)
-    scale: undefined, // this value specifies a positive number that scales the size of the resultant image
-    maxWidth: undefined, // specifies the scale automatically in combination with maxHeight such that the resultant image is no wider than maxWidth
-    maxHeight: undefined // specifies the scale automatically in combination with maxWidth such that the resultant image is no taller than maxHeight
+  format: 'png', // 'png' or 'jpg'
+  bg: undefined, // a css colour for the background (transparent by default)
+  full: false, // whether to export the current viewport view (false, default) or the entire graph (true)
+  scale: undefined, // this value specifies a positive number that scales the size of the resultant image
+  maxWidth: undefined, // specifies the scale automatically in combination with maxHeight such that the resultant image is no wider than maxWidth
+  maxHeight: undefined // specifies the scale automatically in combination with maxWidth such that the resultant image is no taller than maxHeight
 };
+
+// promise style
+snap.shot( defaultOptions ).then(function( img ){
+  console.log('on resolve');
+}).catch(function( err ){
+  console.log('on error');
+});
 
 // node callback style
 snap.shot( defaultOptions, function( err, img ){
-
+  console.log('on error or resolve');
 } );
 ```
 

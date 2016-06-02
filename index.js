@@ -24,6 +24,15 @@ var callbackifyError = function( fn ){
   };
 };
 
+var getStream = function( text ){
+  var stream = new Readable();
+
+  stream.push( text );
+  stream.push( null );
+
+  return stream;
+};
+
 var browserifyPhantomSrc = _.memoize( function(){
   return new Promise(function( resolve, reject ){
     browserify()
@@ -81,7 +90,7 @@ proto.shot = function( opts, next ){
     style: [],
     layout: undefined,
     format: 'png',
-    returns: 'base64uri'
+    resolvesTo: 'base64uri'
   }, opts );
 
   return Promise.try(function(){
@@ -135,20 +144,15 @@ proto.shot = function( opts, next ){
     var index = b64ImgUri.indexOf( marker );
     var b64Img = b64ImgUri.substr( index + marker.length );
 
-    switch( opts.returns ){
+    switch( opts.resolvesTo ){
       case 'base64uri':
+        return b64ImgUri;
+      case 'base64':
         return b64Img;
       case 'stream':
-        return (function(){
-          var stream = new Readable();
-
-          stream.push( b64Img );
-          stream.push( null );
-
-          return stream.pipe( base64.decode() );
-        })();
+        return getStream( b64Img ).pipe( base64.decode() );
       default:
-        throw new Exception('Invalid return type specified: ' + opts.returns);
+        throw new Exception('Invalid resolve type specified: ' + opts.resolvesTo);
     }
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
