@@ -65,19 +65,17 @@ Generate a snapshot of a graph:
 
 ```js
 var defaultOptions = {
-  graph: { // cytoscape.js init options
+  // cytoscape.js init options
     elements: undefined, // cytoscape.js elements json
     style: undefined, // a cytoscape.js stylesheet in json format
     layout: undefined // a cytoscape.js layout options object
-  },
-  image: { // cytoscape.js image export options
+  // cytoscape.js image export options
     format: 'png', // 'png' or 'jpg'
     bg: undefined, // a css colour for the background (transparent by default)
     full: false, // whether to export the current viewport view (false, default) or the entire graph (true)
     scale: undefined, // this value specifies a positive number that scales the size of the resultant image
     maxWidth: undefined, // specifies the scale automatically in combination with maxHeight such that the resultant image is no wider than maxWidth
     maxHeight: undefined // specifies the scale automatically in combination with maxWidth such that the resultant image is no taller than maxHeight
-  }
 };
 
 // node callback style

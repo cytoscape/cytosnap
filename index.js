@@ -4,6 +4,9 @@ var Promise = require('bluebird');
 var _ = require('lodash');
 var browserify = require('browserify');
 var fs = require('fs');
+var base64 = require('base64-stream');
+var stream = require('stream');
+var Readable = stream.Readable;
 
 var callbackifyValue = function( fn ){
   return function( val ){
@@ -74,14 +77,11 @@ proto.shot = function( opts, next ){
 
   opts = _.assign( {
     // defaults
-    graph: {
-      elements: [],
-      style: [],
-      layout: undefined
-    },
-    image: {
-      format: 'png'
-    }
+    elements: [],
+    style: [],
+    layout: undefined,
+    format: 'png',
+    returns: 'base64uri'
   }, opts );
 
   return Promise.try(function(){
@@ -104,26 +104,52 @@ proto.shot = function( opts, next ){
     });
 
     var evalling = page.evaluate(function(){
-      cy.style().fromJson( options.graph.style );
+      cy.style().fromJson( options.style );
 
-      cy.add( options.graph.elements );
+      cy.add( options.elements );
 
       cy.on('layoutstop', function(){
         alert('layoutstop');
       });
 
-      cy.layout( options.graph.layout );
+      cy.layout( options.layout );
     });
 
     return Promise.all([ finishing, evalling ]);
   }).then(function(){
     return page.evaluate(function(){
-      return cy[ options.image.format ]( options.image );
+      return cy[ options.format ]({
+        bg: options.bg,
+        full: options.full,
+        scale: options.scale,
+        maxWidth: options.maxWidth,
+        maxHeight: options.maxHeight
+      });
     });
-  }).then(function( img ){
+  }).then(function( b64Img ){
     page.close();
 
-    return img;
+    return b64Img;
+  }).then(function( b64ImgUri ){
+    var marker = ';base64,';
+    var index = b64ImgUri.indexOf( marker );
+    var b64Img = b64ImgUri.substr( index + marker.length );
+
+    switch( opts.returns ){
+      case 'base64uri':
+        return b64Img;
+      case 'stream':
+        return (function(){
+          var stream = new Readable();
+
+          stream.push( b64Img );
+          stream.push( null );
+
+          return stream.pipe( base64.decode() );
+        })();
+      default:
+        throw new Exception('Invalid return type specified: ' + opts.returns);
+    }
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 

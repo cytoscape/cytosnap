@@ -17,9 +17,18 @@ describe('Output', function(){
     }).then( done );
   });
 
-  it('should be an existing file', function( done ){
-    snap.shot().then(function( img ){
+  it('should exist', function( done ){
+    snap.shot({
+      elements: [
+        {} // 1 node
+      ],
+      returns: 'stream'
+    }).then(function( img ){
       expect( img ).to.exist;
+
+      // put the image in the fs for manual verification
+      var out = require('fs').createWriteStream('./test/img.png');
+      img.pipe( out );
     }).then( done );
   });
 
