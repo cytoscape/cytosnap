@@ -33,10 +33,11 @@ snap.start().then(function(){
 Initialise an instance of Cytosnap:
 
 ```js
-var snap = cytosnap({
-  // options:
-  // TODO
-});
+var snap = cytosnap();
+
+// or
+
+var snap = new cytosnap();
 ```
 
 ### snap.start( [next] )
@@ -45,9 +46,7 @@ Start up the Cytosnap instance, `snap`, so we can request that it generate image
 
 Promise style:
 ```js
-var startPromise = snap.start(); // promise resolved on start
-
-startPromise.then(function(){
+snap.start().then(function(){ // promise resolved on start
   console.log('chained start promise');
 });
 ```
@@ -75,7 +74,6 @@ var defaultOptions = {
   // cytoscape.js image export options
   format: 'png', // 'png' or 'jpg'
   bg: undefined, // a css colour for the background (transparent by default)
-  full: false, // whether to export the current viewport view (false, default) or the entire graph (true)
   scale: undefined, // this value specifies a positive number that scales the size of the resultant image
   maxWidth: undefined, // specifies the scale automatically in combination with maxHeight such that the resultant image is no wider than maxWidth
   maxHeight: undefined // specifies the scale automatically in combination with maxWidth such that the resultant image is no taller than maxHeight
@@ -100,9 +98,7 @@ Stop the Cytosnap instance:
 
 Promise style:
 ```js
-var stopPromise = snap.stop(); // promise resolved on stop
-
-stopPromise.then(function(){
+snap.stop().then(function(){ // promise resolved on stop
   console.log('chained stop promise');
 });
 ```
