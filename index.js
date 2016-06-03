@@ -90,6 +90,7 @@ proto.shot = function( opts, next ){
     style: [],
     layout: undefined,
     format: 'png',
+    full: true,
     resolvesTo: 'base64uri'
   }, opts );
 
