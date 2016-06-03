@@ -22,7 +22,15 @@ describe('Output', function(){
   it('should exist', function( done ){
     snap.shot({
       elements: [
-        {} // 1 node
+        {
+          data: { id: 'foo' }
+        },
+        {
+          data: { id: 'bar' }
+        },
+        {
+          data: { source: 'foo', target: 'bar' }
+        }
       ],
       resolvesTo: 'stream'
     }).then(function( img ){
