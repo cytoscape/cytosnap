@@ -146,15 +146,26 @@ describe('Output', function(){
         }
       ],
       resolvesTo: 'json'
-    }).then(function( img ){
-      expect( img ).to.exist;
-      return img;
-    }).then(function( img ){
+    }).then(function( posns ){
+      expect( posns ).to.exist;
+
+      expect( posns.foo ).to.exist;
+
+      expect( posns.bar ).to.exist;
+
+      expect( posns.foo.x ).to.be.a.number;
+      expect( posns.foo.y ).to.be.a.number;
+
+      expect( posns.bar.x ).to.be.a.number;
+      expect( posns.bar.y ).to.be.a.number;
+
+      return posns;
+    }).then(function( posns ){
       // put the image in the fs for manual verification
       return new Promise(function( resolve ){
         var out = require('fs').createWriteStream('./test/out.json');
 
-        out.write(JSON.stringify(img));
+        out.write(JSON.stringify(posns));
 
         resolve();
       });
