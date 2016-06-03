@@ -145,9 +145,6 @@ describe('Output', function(){
           data: { source: 'foo', target: 'bar' }
         }
       ],
-      format: 'png',
-      width: 1000,
-      height: 1000,
       resolvesTo: 'json'
     }).then(function( img ){
       expect( img ).to.exist;
