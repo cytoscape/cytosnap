@@ -94,8 +94,9 @@ Generate a snapshot of a graph:
 var defaultOptions = {
   // cytoscape.js options
   elements: undefined, // cytoscape.js elements json
-  style: undefined, // a cytoscape.js stylesheet in json format
-  layout: undefined // a cytoscape.js layout options object
+  style: undefined, // a cytoscape.js stylesheet in json format (or a function that returns it)
+  layout: undefined // a cytoscape.js layout options object (or a function that returns it)
+  // (specifying style or layout via a function is useful in cases where you can't send properly serialisable json)
 
   // image export options
   resolvesTo: 'base64uri', // output, one of 'base64uri' (default), 'base64', or 'stream'

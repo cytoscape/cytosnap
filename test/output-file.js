@@ -51,6 +51,53 @@ describe('Output', function(){
     }).then( done );
   });
 
+  it('should exist (png via functions)', function( done ){
+    snap.shot({
+      elements: [
+        {
+          data: { id: 'foo' }
+        },
+        {
+          data: { id: 'bar' }
+        },
+        {
+          data: { source: 'foo', target: 'bar' }
+        }
+      ],
+      style: function(){
+        return cytoscape.stylesheet()
+          .selector('node')
+            .style({
+              'background-color': 'red'
+            })
+          .selector('edge')
+            .style({
+              'line-color': 'red'
+            })
+        ;
+      },
+      layout: function(){
+        return { name: 'random' };
+      },
+      format: 'png',
+      width: 1000,
+      height: 1000,
+      resolvesTo: 'stream'
+    }).then(function( img ){
+      expect( img ).to.exist;
+      return img;
+    }).then(function( img ){
+      // put the image in the fs for manual verification
+      return new Promise(function( resolve ){
+        var out = require('fs').createWriteStream('./test/img.fn.png');
+
+        img.pipe( out );
+
+        out.on('finish', resolve);
+      });
+    }).then( done );
+  });
+
   it('should exist (png)', function( done ){
     snap.shot({
       elements: [

@@ -114,6 +114,18 @@ proto.shot = function( opts, next ){
   }).then(function(){
     return page.open('./phantom/index.html');
   }).then(function(){
+    if( !_.isFunction( opts.style ) ){ return Promise.resolve(); }
+
+    var js = 'function(){ window.styleFunction = (' + opts.style + '); }';
+
+    return page.evaluateJavaScript( js );
+  }).then(function(){
+    if( !_.isFunction( opts.layout ) ){ return Promise.resolve(); }
+
+    var js = 'function(){ window.layoutFunction = (' + opts.layout + '); }';
+
+    return page.evaluateJavaScript( js );
+  }).then(function(){
     var js = 'function(){ window.options = JSON.parse(\'' + JSON.stringify( opts ) + '\'); }';
 
     return page.evaluateJavaScript( js );
@@ -129,7 +141,11 @@ proto.shot = function( opts, next ){
     });
 
     var evalling = page.evaluate(function(){
-      cy.style().fromJson( options.style );
+      if( window.layoutFunction ){ options.layout = layoutFunction(); }
+
+      if( window.styleFunction ){ options.style = styleFunction(); }
+
+      cy.style( options.style );
 
       cy.add( options.elements );
 
