@@ -131,6 +131,43 @@ describe('Output', function(){
     }).then( done );
   });
 
+  it('should exist (png w/ large no. of eles)', function( done ){
+    snap.shot({
+      elements: (function(){
+        var eles = [];
+
+        for( var i = 0; i < 1000; i++ ){
+          eles.push({
+            data: {
+              id: 'ele'+i,
+              foo: 'qweriwqernsdaflkhseoirpaasdjflsajdflkjaskldfjaklsdfjsdhfkashdfkhas;dfihaseir;ashdfl;kasjdflkjasdlfkhsadl;fhasldfhlsaasdfsadfsadfsadfsadfsadfasdfasdfdf',
+              bar: 'sajdkfljaslkdfjklsadjflksajdflkjasdlkfjasl;dfj;lsakdjasdfkljsadklfjaskldfjlasdfjlkasdffjlkasdf;sadjflk;asjdfl;kjsadlfkjaslkasdfjklasdfjklsadfdfljksadf',
+              baz: 'jaskldfjlkasdfjklsajdflkjasdflkjsalkdfjlksadjfl;sadjflk;sadjflk;jsadflkjsaklasdfsadfasdfasdfsaddfjl;asdfjasdjfklasjdflkjsadlfkjsalkdfjasdfls;akdjflk;sad'
+            }
+          });
+        }
+
+        return eles;
+      })(),
+      format: 'png',
+      width: 1000,
+      height: 1000,
+      resolvesTo: 'stream'
+    }).then(function( img ){
+      expect( img ).to.exist;
+      return img;
+    }).then(function( img ){
+      // put the image in the fs for manual verification
+      return new Promise(function( resolve ){
+        var out = require('fs').createWriteStream('./test/img.lg.png');
+
+        img.pipe( out );
+
+        out.on('finish', resolve);
+      });
+    }).then( done );
+  });
+
   it('should be a png when so specified', function( done ){
     snap.shot({
       format: 'png',
