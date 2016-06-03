@@ -167,6 +167,15 @@ proto.shot = function( opts, next ){
         return b64Img;
       case 'stream':
         return getStream( b64Img ).pipe( base64.decode() );
+      case 'json':
+        return page.evaluate(function(s) {
+          var eles = cy.elements();
+          var arr = [];
+          for( var i = 0; i < eles.length; i++ ){
+              arr.push(eles[i].position());
+          }
+          return arr;
+        }, 'title');
       default:
         throw new Exception('Invalid resolve type specified: ' + opts.resolvesTo);
     }

@@ -131,6 +131,40 @@ describe('Output', function(){
     }).then( done );
   });
 
+
+  it('should exist (json)', function( done ){
+    snap.shot({
+      elements: [
+        {
+          data: { id: 'foo' }
+        },
+        {
+          data: { id: 'bar' }
+        },
+        {
+          data: { source: 'foo', target: 'bar' }
+        }
+      ],
+      format: 'png',
+      width: 1000,
+      height: 1000,
+      resolvesTo: 'json'
+    }).then(function( img ){
+      expect( img ).to.exist;
+      return img;
+    }).then(function( img ){
+      // put the image in the fs for manual verification
+      return new Promise(function( resolve ){
+        var out = require('fs').createWriteStream('./test/out.json');
+
+        out.write(JSON.stringify(img));
+
+        resolve();
+      });
+    }).then( done );
+  });
+
+
   it('should exist (png w/ large no. of eles)', function( done ){
     snap.shot({
       elements: (function(){
@@ -168,6 +202,8 @@ describe('Output', function(){
     }).then( done );
   });
 
+
+
   it('should be a png when so specified', function( done ){
     snap.shot({
       format: 'png',
@@ -185,4 +221,6 @@ describe('Output', function(){
       expect( img.indexOf('image/jpeg') ).to.be.at.least(0);
     }).then( done );
   });
+
+
 });
