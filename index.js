@@ -6,7 +6,6 @@ var browserify = require('browserify');
 var fs = require('fs');
 var base64 = require('base64-stream');
 var stream = require('stream');
-var Readable = stream.Readable;
 
 var callbackifyValue = function( fn ){
   return function( val ){
@@ -24,13 +23,14 @@ var callbackifyError = function( fn ){
   };
 };
 
+
 var getStream = function( text ){
-  var stream = new Readable();
+  var s = new stream.Duplex();
 
-  stream.push( text );
-  stream.push( null );
+  s.push( text );
+  s.push( null );
 
-  return stream;
+  return s;
 };
 
 var browserifyPhantomSrc = _.memoize( function(){
@@ -90,9 +90,18 @@ proto.shot = function( opts, next ){
     style: [],
     layout: undefined,
     format: 'png',
-    full: true,
+    background: 'transparent',
+    quality: 85,
+    width: 200,
+    height: 200,
     resolvesTo: 'base64uri'
   }, opts );
+
+  if( opts.format === 'jpg' ){
+    opts.format = 'jpeg';
+  } else if( opts.format === 'png' ){
+    opts.quality = 0; // most compression
+  }
 
   return Promise.try(function(){
     return browserifyPhantomSrc();
@@ -100,10 +109,16 @@ proto.shot = function( opts, next ){
     return snap.phantom.createPage();
   }).then(function( phantomPage ){
     page = phantomPage;
-
+  }).then(function(){
+    return page.property('viewportSize', { width: opts.width, height: opts.height });
+  }).then(function(){
     return page.open('./phantom/index.html');
   }).then(function(){
     var js = 'function(){ window.options = JSON.parse(\'' + JSON.stringify( opts ) + '\'); }';
+
+    return page.evaluateJavaScript( js );
+  }).then(function(){
+    var js = 'function(){ document.body.style.setProperty("background", "' + opts.background + '"); }';
 
     return page.evaluateJavaScript( js );
   }).then(function(){
@@ -127,27 +142,11 @@ proto.shot = function( opts, next ){
 
     return Promise.all([ finishing, evalling ]);
   }).then(function(){
-    return page.evaluate(function(){
-      return cy[ options.format ]({
-        bg: options.bg,
-        full: options.full,
-        scale: options.scale,
-        maxWidth: options.maxWidth,
-        maxHeight: options.maxHeight
-      });
-    });
+    return page.renderBase64( opts.format, opts.quality );
   }).then(function( b64Img ){
-    page.close();
-
-    return b64Img;
-  }).then(function( b64ImgUri ){
-    var marker = ';base64,';
-    var index = b64ImgUri.indexOf( marker );
-    var b64Img = b64ImgUri.substr( index + marker.length );
-
     switch( opts.resolvesTo ){
       case 'base64uri':
-        return b64ImgUri;
+        return 'data:image/' + opts.format + ';base64,' + b64Img;
       case 'base64':
         return b64Img;
       case 'stream':
@@ -155,6 +154,10 @@ proto.shot = function( opts, next ){
       default:
         throw new Exception('Invalid resolve type specified: ' + opts.resolvesTo);
     }
+  }).then(function( img ){
+    page.close();
+
+    return img;
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 

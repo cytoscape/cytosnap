@@ -21,7 +21,35 @@ var cytosnap = require('cytosnap');
 var snap = cytosnap();
 
 snap.start().then(function(){
-  return snap.shot({ /* options... */ });
+  return snap.shot({
+    elements: [ // http://js.cytoscape.org/#notation/elements-json
+      { data: { id: 'foo' } },
+      { data: { id: 'bar' } },
+      { data: { source: 'foo', target: 'bar' } }
+    ],
+    layout: { // http://js.cytoscape.org/#init-opts/layout
+      name: 'grid'
+    },
+    style: [ // http://js.cytoscape.org/#style
+      {
+        selector: 'node',
+        style: {
+          'background-color': 'red'
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'line-color': 'red'
+        }
+      }
+    ],
+    resolvesTo: 'base64uri',
+    format: 'png',
+    width: 640,
+    height: 480,
+    background: 'transparent'
+  });
 }).then(function( img ){
   // do whatever you want with img
   console.log( img );
@@ -64,19 +92,18 @@ Generate a snapshot of a graph:
 
 ```js
 var defaultOptions = {
-  resolvesTo: 'base64uri', // output, one of 'base64uri' (default), 'base64', or 'stream'
-
-  // cytoscape.js init options
+  // cytoscape.js options
   elements: undefined, // cytoscape.js elements json
   style: undefined, // a cytoscape.js stylesheet in json format
   layout: undefined // a cytoscape.js layout options object
 
-  // cytoscape.js image export options
-  format: 'png', // 'png' or 'jpg'
-  bg: undefined, // a css colour for the background (transparent by default)
-  scale: undefined, // this value specifies a positive number that scales the size of the resultant image
-  maxWidth: undefined, // specifies the scale automatically in combination with maxHeight such that the resultant image is no wider than maxWidth
-  maxHeight: undefined // specifies the scale automatically in combination with maxWidth such that the resultant image is no taller than maxHeight
+  // image export options
+  resolvesTo: 'base64uri', // output, one of 'base64uri' (default), 'base64', or 'stream'
+  format: 'png', // 'png' or 'jpg'/'jpeg'
+  quality: 85, // quality of jpg export, 0 (low) to 100 (high)
+  background: 'transparent', // a css colour for the background (transparent by default)
+  width: 200, // the width of the image in pixels
+  height: 200 // the height of the image in pixels
 };
 
 // promise style
