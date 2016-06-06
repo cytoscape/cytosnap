@@ -99,9 +99,9 @@ var defaultOptions = {
   // (specifying style or layout via a function is useful in cases where you can't send properly serialisable json)
 
   // image export options
-  resolvesTo: 'base64uri', // output, one of 'base64uri' (default), 'base64', or 'stream'
-  format: 'png', // 'png' or 'jpg'/'jpeg'
-  quality: 85, // quality of jpg export, 0 (low) to 100 (high)
+  resolvesTo: 'base64uri', // output, one of 'base64uri' (default), 'base64', 'stream', or 'json' (export resultant node positions from layout)
+  format: 'png', // 'png' or 'jpg'/'jpeg' (n/a if resolvesTo: 'json')
+  quality: 85, // quality of image if exporting jpg format, 0 (low) to 100 (high)
   background: 'transparent', // a css colour for the background (transparent by default)
   width: 200, // the width of the image in pixels
   height: 200 // the height of the image in pixels
