@@ -6,6 +6,7 @@ var browserify = require('browserify');
 var fs = require('fs');
 var base64 = require('base64-stream');
 var stream = require('stream');
+var path = require('path');
 
 var callbackifyValue = function( fn ){
   return function( val ){
@@ -36,10 +37,10 @@ var getStream = function( text ){
 var browserifyPhantomSrc = _.memoize( function(){
   return new Promise(function( resolve, reject ){
     browserify()
-      .add('./phantom/index.js')
+      .add( path.join(__dirname, './phantom/index.js') )
       .bundle()
       .on( 'end', resolve )
-      .pipe( fs.createWriteStream('./phantom/index.pack.js') )
+      .pipe( fs.createWriteStream( path.join(__dirname, './phantom/index.pack.js') ) )
   });
 }, function(){ return 'staticKey'; } );
 
@@ -112,7 +113,7 @@ proto.shot = function( opts, next ){
   }).then(function(){
     return page.property('viewportSize', { width: opts.width, height: opts.height });
   }).then(function(){
-    return page.open('./phantom/index.html');
+    return page.open( path.join(__dirname, './phantom/index.html') );
   }).then(function(){
     if( !_.isFunction( opts.style ) ){ return Promise.resolve(); }
 
