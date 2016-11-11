@@ -113,7 +113,7 @@ proto.shot = function( opts, next ){
   }).then(function(){
     return page.property('viewportSize', { width: opts.width, height: opts.height });
   }).then(function(){
-    return page.open( path.join(__dirname, './phantom/index.html') );
+    return page.open( 'file://' + path.join(__dirname, './phantom/index.html') );
   }).then(function(){
     if( !_.isFunction( opts.style ) ){ return Promise.resolve(); }
 
