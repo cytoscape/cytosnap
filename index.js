@@ -89,7 +89,7 @@ proto.shot = function( opts, next ){
     // defaults
     elements: [],
     style: [],
-    layout: undefined,
+    layout: { name: 'grid' },
     format: 'png',
     background: 'transparent',
     quality: 85,
