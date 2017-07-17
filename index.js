@@ -154,7 +154,7 @@ proto.shot = function( opts, next ){
         alert('layoutstop');
       });
 
-      cy.layout( options.layout );
+      cy.makeLayout( options.layout ).run(); // n.b. makeLayout used in case cytoscape@2 support is desired
     });
 
     return Promise.all([ finishing, evalling ]);
