@@ -7,6 +7,7 @@ var fs = require('fs');
 var base64 = require('base64-stream');
 var stream = require('stream');
 var path = require('path');
+var os = require('os');
 
 var callbackifyValue = function( fn ){
   return function( val ){
@@ -113,7 +114,15 @@ proto.shot = function( opts, next ){
   }).then(function(){
     return page.property('viewportSize', { width: opts.width, height: opts.height });
   }).then(function(){
-    return page.open( 'file://' + path.join(__dirname, './phantom/index.html') );
+    var patchUri = function(uri){
+      if( os.platform() === 'win32' ){
+        return '/' + uri.replace(/\\/g, '/');
+      } else {
+        return uri;
+      }
+    };
+
+    return page.open( 'file://' + patchUri(path.join(__dirname, './phantom/index.html')) );
   }).then(function(){
     if( !_.isFunction( opts.style ) ){ return Promise.resolve(); }
 
