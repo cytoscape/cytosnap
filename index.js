@@ -1,4 +1,4 @@
-var phantom = require('phantom');
+// var phantom = require('phantom');
 var cytoscape = require('cytoscape');
 var Promise = require('bluebird');
 var _ = require('lodash');
@@ -8,6 +8,7 @@ var base64 = require('base64-stream');
 var stream = require('stream');
 var path = require('path');
 var os = require('os');
+var puppeteer = require('puppeteer');
 
 var callbackifyValue = function( fn ){
   return function( val ){
@@ -64,9 +65,9 @@ proto.start = function( next ){
   var snap = this;
 
   return Promise.try(function(){
-    return phantom.create();
-  }).then(function( phantomInstance ){
-    snap.phantom = phantomInstance;
+    return puppeteer.launch({ headless: true });
+  }).then(function( browser ){
+    snap.browser = browser;
 
     snap.running = true;
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
@@ -76,7 +77,7 @@ proto.stop = function( next ){
   var snap = this;
 
   return Promise.try(function(){
-    snap.phantom.exit();
+    snap.browser.close();
   }).then(function(){
     snap.running = false;
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
@@ -108,11 +109,11 @@ proto.shot = function( opts, next ){
   return Promise.try(function(){
     return browserifyPhantomSrc();
   }).then(function(){
-    return snap.phantom.createPage();
-  }).then(function( phantomPage ){
-    page = phantomPage;
+    return snap.browser.newPage();
+  }).then(function( puppeteerPage ){
+    page = puppeteerPage;
   }).then(function(){
-    return page.property('viewportSize', { width: opts.width, height: opts.height });
+    return page.setViewport({ width: opts.width, height: opts.height });
   }).then(function(){
     var patchUri = function(uri){
       if( os.platform() === 'win32' ){
@@ -122,35 +123,30 @@ proto.shot = function( opts, next ){
       }
     };
 
-    return page.open( 'file://' + patchUri(path.join(__dirname, './phantom/index.html')) );
+    return page.goto( 'file://' + patchUri(path.join(__dirname, './phantom/index.html')) );
   }).then(function(){
     if( !_.isFunction( opts.style ) ){ return Promise.resolve(); }
 
-    var js = 'function(){ window.styleFunction = (' + opts.style + '); }';
+    var js = 'window.styleFunction = (' + opts.style + ')';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
     if( !_.isFunction( opts.layout ) ){ return Promise.resolve(); }
 
-    var js = 'function(){ window.layoutFunction = (' + opts.layout + '); }';
+    var js = 'window.layoutFunction = (' + opts.layout + ')';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
-    var js = 'function(){ window.options = JSON.parse(\'' + JSON.stringify( opts ) + '\'); }';
+    var js = 'window.options = ( ' + JSON.stringify(opts) + ' )';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
-    var js = 'function(){ document.body.style.setProperty("background", "' + opts.background + '"); }';
+    var js = 'document.body.style.setProperty("background", "' + opts.background + '")';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
-    var finishing = new Promise(function( resolve, reject ){
-      page.on('onAlert', function( msg ){
-        resolve( msg );
-      });
-    });
 
-    var evalling = page.evaluate(function(){
+    return page.evaluate(function(){
       if( window.layoutFunction ){ options.layout = layoutFunction(); }
 
       if( window.styleFunction ){ options.style = styleFunction(); }
@@ -159,16 +155,16 @@ proto.shot = function( opts, next ){
 
       cy.add( options.elements );
 
-      cy.on('layoutstop', function(){
-        alert('layoutstop');
-      });
+      var layoutDone = cy.promiseOn('layoutstop');
 
       cy.makeLayout( options.layout ).run(); // n.b. makeLayout used in case cytoscape@2 support is desired
-    });
 
-    return Promise.all([ finishing, evalling ]);
+      return layoutDone;
+    });
   }).then(function(){
-    return page.renderBase64( opts.format, opts.quality );
+    if( opts.resolveTo === 'json' ){ return null; } // can skip in json case
+
+    return page.screenshot({ type: opts.format, quality: opts.quality, encoding: 'base64' });
   }).then(function( b64Img ){
     switch( opts.resolvesTo ){
       case 'base64uri':
@@ -191,9 +187,7 @@ proto.shot = function( opts, next ){
         throw new Exception('Invalid resolve type specified: ' + opts.resolvesTo);
     }
   }).then(function( img ){
-    page.close();
-
-    return img;
+    return page.close().then(function(){ return img; });
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 
