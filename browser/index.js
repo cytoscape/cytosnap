@@ -1,9 +1,11 @@
-// prep the phantomjs page and expose globals that we can reference from node
+// prep the page and expose globals that we can reference from node
+
+/* global window, document */
 
 var cytoscape = window.cytoscape = require('cytoscape');
 
 window.addEventListener('DOMContentLoaded', function(){
-  var cy = window.cy = cytoscape({
+  window.cy = cytoscape({
     container: document.getElementById('cy')
   });
 });

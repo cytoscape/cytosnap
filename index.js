@@ -1,34 +1,33 @@
-// var phantom = require('phantom');
-var cytoscape = require('cytoscape');
-var Promise = require('bluebird');
-var _ = require('lodash');
-var browserify = require('browserify');
-var fs = require('fs');
-var base64 = require('base64-stream');
-var stream = require('stream');
-var path = require('path');
-var os = require('os');
-var puppeteer = require('puppeteer');
+let Promise = require('bluebird');
+let browserify = require('browserify');
+let fs = require('fs');
+let base64 = require('base64-stream');
+let stream = require('stream');
+let path = require('path');
+let os = require('os');
+let puppeteer = require('puppeteer');
+let typeofFn = typeof function(){};
+let isFunction = x => typeof x === typeofFn;
 
-var callbackifyValue = function( fn ){
+let callbackifyValue = function( fn ){
   return function( val ){
-    if( _.isFunction(fn) ){ fn( null, val ); }
+    if( isFunction(fn) ){ fn( null, val ); }
 
     return val;
   };
 };
 
-var callbackifyError = function( fn ){
+let callbackifyError = function( fn ){
   return function( err ){
-    if( _.isFunction(fn) ){ fn( err ); }
+    if( isFunction(fn) ){ fn( err ); }
 
     throw err;
   };
 };
 
 
-var getStream = function( text ){
-  var s = new stream.Duplex();
+let getStream = function( text ){
+  let s = new stream.Duplex();
 
   s.push( text );
   s.push( null );
@@ -36,22 +35,30 @@ var getStream = function( text ){
   return s;
 };
 
-var browserifyPhantomSrc = _.memoize( function(){
-  return new Promise(function( resolve, reject ){
+let browserSrc;
+
+let browserifyBrowserSrc = function(){
+  if( browserSrc != null ){
+    return browserSrc;
+  }
+
+  browserSrc = new Promise(function( resolve ){
     browserify()
-      .add( path.join(__dirname, './phantom/index.js') )
+      .add( path.join(__dirname, './browser/index.js') )
       .bundle()
       .on( 'end', resolve )
-      .pipe( fs.createWriteStream( path.join(__dirname, './phantom/index.pack.js') ) )
+      .pipe( fs.createWriteStream( path.join(__dirname, './browser/index.pack.js') ) );
   });
-}, function(){ return 'staticKey'; } );
 
-var Cytosnap = function( opts ){
+  return browserSrc;
+};
+
+let Cytosnap = function( opts ){
   if( !(this instanceof Cytosnap) ){
     return new Cytosnap( opts );
   }
 
-  this.options = _.assign( {
+  this.options = Object.assign( {
     // defaults
 
   }, opts );
@@ -59,10 +66,10 @@ var Cytosnap = function( opts ){
   this.running = false;
 };
 
-var proto = Cytosnap.prototype;
+let proto = Cytosnap.prototype;
 
 proto.start = function( next ){
-  var snap = this;
+  let snap = this;
 
   return Promise.try(function(){
     return puppeteer.launch({ headless: true });
@@ -74,7 +81,7 @@ proto.start = function( next ){
 };
 
 proto.stop = function( next ){
-  var snap = this;
+  let snap = this;
 
   return Promise.try(function(){
     snap.browser.close();
@@ -84,10 +91,10 @@ proto.stop = function( next ){
 };
 
 proto.shot = function( opts, next ){
-  var snap = this;
-  var page;
+  let snap = this;
+  let page;
 
-  opts = _.assign( {
+  opts = Object.assign( {
     // defaults
     elements: [],
     style: [],
@@ -107,7 +114,7 @@ proto.shot = function( opts, next ){
   }
 
   return Promise.try(function(){
-    return browserifyPhantomSrc();
+    return browserifyBrowserSrc();
   }).then(function(){
     return snap.browser.newPage();
   }).then(function( puppeteerPage ){
@@ -115,7 +122,7 @@ proto.shot = function( opts, next ){
   }).then(function(){
     return page.setViewport({ width: opts.width, height: opts.height });
   }).then(function(){
-    var patchUri = function(uri){
+    let patchUri = function(uri){
       if( os.platform() === 'win32' ){
         return '/' + uri.replace(/\\/g, '/');
       } else {
@@ -123,30 +130,31 @@ proto.shot = function( opts, next ){
       }
     };
 
-    return page.goto( 'file://' + patchUri(path.join(__dirname, './phantom/index.html')) );
+    return page.goto( 'file://' + patchUri(path.join(__dirname, './browser/index.html')) );
   }).then(function(){
-    if( !_.isFunction( opts.style ) ){ return Promise.resolve(); }
+    if( !isFunction( opts.style ) ){ return Promise.resolve(); }
 
-    var js = 'window.styleFunction = (' + opts.style + ')';
+    let js = 'window.styleFunction = (' + opts.style + ')';
 
     return page.evaluate( js );
   }).then(function(){
-    if( !_.isFunction( opts.layout ) ){ return Promise.resolve(); }
+    if( !isFunction( opts.layout ) ){ return Promise.resolve(); }
 
-    var js = 'window.layoutFunction = (' + opts.layout + ')';
-
-    return page.evaluate( js );
-  }).then(function(){
-    var js = 'window.options = ( ' + JSON.stringify(opts) + ' )';
+    let js = 'window.layoutFunction = (' + opts.layout + ')';
 
     return page.evaluate( js );
   }).then(function(){
-    var js = 'document.body.style.setProperty("background", "' + opts.background + '")';
+    let js = 'window.options = ( ' + JSON.stringify(opts) + ' )';
+
+    return page.evaluate( js );
+  }).then(function(){
+    let js = 'document.body.style.setProperty("background", "' + opts.background + '")';
 
     return page.evaluate( js );
   }).then(function(){
 
     return page.evaluate(function(){
+      /* global window, options, cy, layoutFunction, styleFunction */
       if( window.layoutFunction ){ options.layout = layoutFunction(); }
 
       if( window.styleFunction ){ options.style = styleFunction(); }
@@ -155,7 +163,7 @@ proto.shot = function( opts, next ){
 
       cy.add( options.elements );
 
-      var layoutDone = cy.promiseOn('layoutstop');
+      let layoutDone = cy.promiseOn('layoutstop');
 
       cy.makeLayout( options.layout ).run(); // n.b. makeLayout used in case cytoscape@2 support is desired
 
@@ -174,8 +182,8 @@ proto.shot = function( opts, next ){
       case 'stream':
         return getStream( b64Img ).pipe( base64.decode() );
       case 'json':
-        return page.evaluate(function(s){
-          var posns = {};
+        return page.evaluate(function(){
+          let posns = {};
 
           cy.nodes().forEach(function(n){
             posns[ n.id() ] = n.position();
@@ -184,7 +192,7 @@ proto.shot = function( opts, next ){
           return posns;
         });
       default:
-        throw new Exception('Invalid resolve type specified: ' + opts.resolvesTo);
+        throw new Error('Invalid resolve type specified: ' + opts.resolvesTo);
     }
   }).then(function( img ){
     return page.close().then(function(){ return img; });
