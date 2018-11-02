@@ -192,7 +192,7 @@ describe('Output', function(){
     }).then( done );
   });
 
-  it('should exist (png with cose)', function( done ){
+  it('should exist (jpg with cose)', function( done ){
     snap.shot({
       elements: [
         { data: { id: 'n0' } },
