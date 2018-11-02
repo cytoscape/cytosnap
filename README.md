@@ -18,6 +18,11 @@ Quick start example:
 
 ```js
 var cytosnap = require('cytosnap');
+
+// list of layout extensions to use
+// NB you must `npm install` these yourself for your project
+cytosnap.use([ 'cytoscape-dagre', 'cytoscape-cose-bilkent' ]);
+
 var snap = cytosnap();
 
 snap.start().then(function(){
@@ -28,7 +33,7 @@ snap.start().then(function(){
       { data: { source: 'foo', target: 'bar' } }
     ],
     layout: { // http://js.cytoscape.org/#init-opts/layout
-      name: 'grid'
+      name: 'grid' // you may reference a `cytoscape.use()`d extension name here
     },
     style: [ // http://js.cytoscape.org/#style
       {
@@ -55,6 +60,10 @@ snap.start().then(function(){
   console.log( img );
 });
 ```
+
+### cytosnap.use()
+
+Pull in layout extensions
 
 ### cytosnap()
 

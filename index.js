@@ -8,6 +8,9 @@ let os = require('os');
 let puppeteer = require('puppeteer');
 let typeofFn = typeof function(){};
 let isFunction = x => typeof x === typeofFn;
+let Handlebars = require('handlebars');
+let readFile = Promise.promisify(fs.readFile);
+let writeFile = Promise.promisify(fs.writeFile);
 
 let callbackifyValue = function( fn ){
   return function( val ){
@@ -60,10 +63,33 @@ let Cytosnap = function( opts ){
 
   this.options = Object.assign( {
     // defaults
-
   }, opts );
 
   this.running = false;
+};
+
+let extensions = [];
+
+Cytosnap.use = function(exts){
+  extensions = exts;
+};
+
+let wroteExtensionList = false;
+
+let writeExtensionsList = function(){
+  if( wroteExtensionList ){ return Promise.resolve(); }
+
+  let readTemplate = () => readFile(path.join(__dirname, './browser/index.js.hbs'), 'utf8');
+
+  let writeJs = contents => writeFile(path.join(__dirname, './browser/index.js'), contents);
+
+  let fillTemplate = template => {
+    return Handlebars.compile(template)({ extensions });
+  };
+
+  let done = () => wroteExtensionList = true;
+
+  return Promise.try(readTemplate).then(fillTemplate).then(writeJs).then(done);
 };
 
 let proto = Cytosnap.prototype;
@@ -114,6 +140,8 @@ proto.shot = function( opts, next ){
   }
 
   return Promise.try(function(){
+    return writeExtensionsList();
+  }).then(function(){
     return browserifyBrowserSrc();
   }).then(function(){
     return snap.browser.newPage();
