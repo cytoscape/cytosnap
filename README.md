@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/cytoscape/cytosnap](https://badges.gitter.im/cytoscape/cytosnap.svg)](https://gitter.im/cytoscape/cytosnap?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/cytoscape/cytosnap.svg?branch=master)](https://travis-ci.org/cytoscape/cytosnap)
 
-Render graphs on the server side with [Cytoscape.js](http://js.cytoscape.org), getting image files as output.  This package uses [Puppeteer](https://github.com/GoogleChrome/puppeteer) to generate the output.  Refer to the [Puppeteer documentation](https://pptr.dev) to ensure that your machine is configured properly to run Chrome headlessly.
+Render graphs on the server side with [Cytoscape.js](http://js.cytoscape.org), getting image files as output.  This package uses [Puppeteer](https://pptr.dev) to generate the output.  Refer to the [Puppeteer documentation](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#troubleshooting) to ensure that your machine is configured properly to run Chrome headlessly.
 
 This project was initiated [at MozSprint 2016](https://github.com/mozillascience/global-sprint-2016/issues/25)
 
