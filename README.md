@@ -63,7 +63,13 @@ snap.start().then(function(){
 
 ### cytosnap.use()
 
-Pull in layout extensions
+Pull in layout extensions that you may used in the exported images:
+
+```js
+cytosnap.use([ 'cytoscape-dagre', 'cytoscape-cose-bilkent' ]);
+```
+
+Each string is an npm package name that can be pulled in by `require()`.  The list of extension package names that you specify is static:  You may specify the list only once, so make sure the list includes all layouts you want to run.  Every `snap` object shares the same extension list.
 
 ### cytosnap()
 
