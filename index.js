@@ -63,6 +63,7 @@ let Cytosnap = function( opts ){
 
   this.options = Object.assign( {
     // defaults
+    args: []
   }, opts );
 
   this.running = false;
@@ -98,7 +99,7 @@ proto.start = function( next ){
   let snap = this;
 
   return Promise.try(function(){
-    return puppeteer.launch({ headless: true });
+    return puppeteer.launch({ headless: true, args: snap.options.args });
   }).then(function( browser ){
     snap.browser = browser;
 

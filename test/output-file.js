@@ -11,7 +11,9 @@ describe('Output', function(){
   this.timeout( 10000 );
 
   beforeEach(function( done ){ // setup
-    snap = cytosnap();
+    snap = cytosnap({
+      args: ['--no-sandbox'] // required for travis ci
+    });
 
     snap.start().then( done );
   });
