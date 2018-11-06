@@ -1,6 +1,6 @@
 {
   "name": "cytosnap",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Render images of Cytoscape.js graphs on the server",
   "main": "index.js",
   "scripts": {
