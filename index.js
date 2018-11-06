@@ -1,33 +1,36 @@
-var phantom = require('phantom');
-var cytoscape = require('cytoscape');
-var Promise = require('bluebird');
-var _ = require('lodash');
-var browserify = require('browserify');
-var fs = require('fs');
-var base64 = require('base64-stream');
-var stream = require('stream');
-var path = require('path');
-var os = require('os');
+let Promise = require('bluebird');
+let browserify = require('browserify');
+let fs = require('fs');
+let base64 = require('base64-stream');
+let stream = require('stream');
+let path = require('path');
+let os = require('os');
+let puppeteer = require('puppeteer');
+let typeofFn = typeof function(){};
+let isFunction = x => typeof x === typeofFn;
+let Handlebars = require('handlebars');
+let readFile = Promise.promisify(fs.readFile);
+let writeFile = Promise.promisify(fs.writeFile);
 
-var callbackifyValue = function( fn ){
+let callbackifyValue = function( fn ){
   return function( val ){
-    if( _.isFunction(fn) ){ fn( null, val ); }
+    if( isFunction(fn) ){ fn( null, val ); }
 
     return val;
   };
 };
 
-var callbackifyError = function( fn ){
+let callbackifyError = function( fn ){
   return function( err ){
-    if( _.isFunction(fn) ){ fn( err ); }
+    if( isFunction(fn) ){ fn( err ); }
 
     throw err;
   };
 };
 
 
-var getStream = function( text ){
-  var s = new stream.Duplex();
+let getStream = function( text ){
+  let s = new stream.Duplex();
 
   s.push( text );
   s.push( null );
@@ -35,58 +38,90 @@ var getStream = function( text ){
   return s;
 };
 
-var browserifyPhantomSrc = _.memoize( function(){
-  return new Promise(function( resolve, reject ){
+let browserSrc;
+
+let browserifyBrowserSrc = function(){
+  if( browserSrc != null ){
+    return browserSrc;
+  }
+
+  browserSrc = new Promise(function( resolve ){
     browserify()
-      .add( path.join(__dirname, './phantom/index.js') )
+      .add( path.join(__dirname, './browser/index.js') )
       .bundle()
       .on( 'end', resolve )
-      .pipe( fs.createWriteStream( path.join(__dirname, './phantom/index.pack.js') ) )
+      .pipe( fs.createWriteStream( path.join(__dirname, './browser/index.pack.js') ) );
   });
-}, function(){ return 'staticKey'; } );
 
-var Cytosnap = function( opts ){
+  return browserSrc;
+};
+
+let Cytosnap = function( opts ){
   if( !(this instanceof Cytosnap) ){
     return new Cytosnap( opts );
   }
 
-  this.options = _.assign( {
+  this.options = Object.assign( {
     // defaults
-
+    args: []
   }, opts );
 
   this.running = false;
 };
 
-var proto = Cytosnap.prototype;
+let extensions = [];
+
+Cytosnap.use = function(exts){
+  extensions = exts;
+};
+
+let wroteExtensionList = false;
+
+let writeExtensionsList = function(){
+  if( wroteExtensionList ){ return Promise.resolve(); }
+
+  let readTemplate = () => readFile(path.join(__dirname, './browser/index.js.hbs'), 'utf8');
+
+  let writeJs = contents => writeFile(path.join(__dirname, './browser/index.js'), contents);
+
+  let fillTemplate = template => {
+    return Handlebars.compile(template)({ extensions });
+  };
+
+  let done = () => wroteExtensionList = true;
+
+  return Promise.try(readTemplate).then(fillTemplate).then(writeJs).then(done);
+};
+
+let proto = Cytosnap.prototype;
 
 proto.start = function( next ){
-  var snap = this;
+  let snap = this;
 
   return Promise.try(function(){
-    return phantom.create();
-  }).then(function( phantomInstance ){
-    snap.phantom = phantomInstance;
+    return puppeteer.launch({ headless: true, args: snap.options.args });
+  }).then(function( browser ){
+    snap.browser = browser;
 
     snap.running = true;
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 
 proto.stop = function( next ){
-  var snap = this;
+  let snap = this;
 
   return Promise.try(function(){
-    snap.phantom.exit();
+    snap.browser.close();
   }).then(function(){
     snap.running = false;
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 
 proto.shot = function( opts, next ){
-  var snap = this;
-  var page;
+  let snap = this;
+  let page;
 
-  opts = _.assign( {
+  opts = Object.assign( {
     // defaults
     elements: [],
     style: [],
@@ -106,15 +141,17 @@ proto.shot = function( opts, next ){
   }
 
   return Promise.try(function(){
-    return browserifyPhantomSrc();
+    return writeExtensionsList();
   }).then(function(){
-    return snap.phantom.createPage();
-  }).then(function( phantomPage ){
-    page = phantomPage;
+    return browserifyBrowserSrc();
   }).then(function(){
-    return page.property('viewportSize', { width: opts.width, height: opts.height });
+    return snap.browser.newPage();
+  }).then(function( puppeteerPage ){
+    page = puppeteerPage;
   }).then(function(){
-    var patchUri = function(uri){
+    return page.setViewport({ width: opts.width, height: opts.height });
+  }).then(function(){
+    let patchUri = function(uri){
       if( os.platform() === 'win32' ){
         return '/' + uri.replace(/\\/g, '/');
       } else {
@@ -122,35 +159,31 @@ proto.shot = function( opts, next ){
       }
     };
 
-    return page.open( 'file://' + patchUri(path.join(__dirname, './phantom/index.html')) );
+    return page.goto( 'file://' + patchUri(path.join(__dirname, './browser/index.html')) );
   }).then(function(){
-    if( !_.isFunction( opts.style ) ){ return Promise.resolve(); }
+    if( !isFunction( opts.style ) ){ return Promise.resolve(); }
 
-    var js = 'function(){ window.styleFunction = (' + opts.style + '); }';
+    let js = 'window.styleFunction = (' + opts.style + ')';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
-    if( !_.isFunction( opts.layout ) ){ return Promise.resolve(); }
+    if( !isFunction( opts.layout ) ){ return Promise.resolve(); }
 
-    var js = 'function(){ window.layoutFunction = (' + opts.layout + '); }';
+    let js = 'window.layoutFunction = (' + opts.layout + ')';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
-    var js = 'function(){ window.options = JSON.parse(\'' + JSON.stringify( opts ) + '\'); }';
+    let js = 'window.options = ( ' + JSON.stringify(opts) + ' )';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
-    var js = 'function(){ document.body.style.setProperty("background", "' + opts.background + '"); }';
+    let js = 'document.body.style.setProperty("background", "' + opts.background + '")';
 
-    return page.evaluateJavaScript( js );
+    return page.evaluate( js );
   }).then(function(){
-    var finishing = new Promise(function( resolve, reject ){
-      page.on('onAlert', function( msg ){
-        resolve( msg );
-      });
-    });
 
-    var evalling = page.evaluate(function(){
+    return page.evaluate(function(){
+      /* global window, options, cy, layoutFunction, styleFunction */
       if( window.layoutFunction ){ options.layout = layoutFunction(); }
 
       if( window.styleFunction ){ options.style = styleFunction(); }
@@ -159,16 +192,16 @@ proto.shot = function( opts, next ){
 
       cy.add( options.elements );
 
-      cy.on('layoutstop', function(){
-        alert('layoutstop');
-      });
+      let layoutDone = cy.promiseOn('layoutstop');
 
       cy.makeLayout( options.layout ).run(); // n.b. makeLayout used in case cytoscape@2 support is desired
-    });
 
-    return Promise.all([ finishing, evalling ]);
+      return layoutDone;
+    });
   }).then(function(){
-    return page.renderBase64( opts.format, opts.quality );
+    if( opts.resolveTo === 'json' ){ return null; } // can skip in json case
+
+    return page.screenshot({ type: opts.format, quality: opts.quality, encoding: 'base64' });
   }).then(function( b64Img ){
     switch( opts.resolvesTo ){
       case 'base64uri':
@@ -178,8 +211,8 @@ proto.shot = function( opts, next ){
       case 'stream':
         return getStream( b64Img ).pipe( base64.decode() );
       case 'json':
-        return page.evaluate(function(s){
-          var posns = {};
+        return page.evaluate(function(){
+          let posns = {};
 
           cy.nodes().forEach(function(n){
             posns[ n.id() ] = n.position();
@@ -188,12 +221,10 @@ proto.shot = function( opts, next ){
           return posns;
         });
       default:
-        throw new Exception('Invalid resolve type specified: ' + opts.resolvesTo);
+        throw new Error('Invalid resolve type specified: ' + opts.resolvesTo);
     }
   }).then(function( img ){
-    page.close();
-
-    return img;
+    return page.close().then(function(){ return img; });
   }).then( callbackifyValue(next) ).catch( callbackifyError(next) );
 };
 

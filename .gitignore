@@ -1,7 +1,10 @@
 node_modules
-phantom/index.pack.js
+browser/index.pack.js
+browser/index.js
 test/img.png
 test/img.jpg
 test/img.fn.png
 test/img.lg.png
 test/out.json
+test/img.dagre.png
+test/img.cose.jpg
