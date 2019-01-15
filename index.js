@@ -93,13 +93,21 @@ let writeExtensionsList = function(){
   return Promise.try(readTemplate).then(fillTemplate).then(writeJs).then(done);
 };
 
+let launchPuppeteer = function(options) {
+  let puppeteerOptions = { headless: true, args: options.args };
+  if (options.executablePath) {
+    puppeteerOptions.executablePath = options.executablePath;
+  }
+  return puppeteer.launch(puppeteerOptions);
+};
+
 let proto = Cytosnap.prototype;
 
 proto.start = function( next ){
   let snap = this;
 
   return Promise.try(function(){
-    return puppeteer.launch({ headless: true, args: snap.options.args });
+    return launchPuppeteer(snap.options);
   }).then(function( browser ){
     snap.browser = browser;
 
