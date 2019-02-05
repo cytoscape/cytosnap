@@ -62,9 +62,15 @@ let Cytosnap = function( opts ){
   }
 
   this.options = Object.assign( {
-    // defaults
-    args: []
+    // top-level defaults -- none currently
   }, opts );
+
+  // options to pass to puppeteer.launch()
+  this.options.puppeteer = Object.assign({
+    // defaults
+    args: opts.args, // backwards compat
+    headless: true
+  }, opts.puppeteer);
 
   this.running = false;
 };
@@ -99,7 +105,7 @@ proto.start = function( next ){
   let snap = this;
 
   return Promise.try(function(){
-    return puppeteer.launch({ headless: true, args: snap.options.args });
+    return puppeteer.launch(snap.options.puppeteer);
   }).then(function( browser ){
     snap.browser = browser;
 

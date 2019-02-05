@@ -87,7 +87,10 @@ var snap = new cytosnap(options);
 
 The options you can pass include:
 
-- `args` : An array of argument strings to pass to Puppeteer.  This is useful for disabling Chrome's sandbox for Travis.  See the [Puppeteer docs](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#troubleshooting) for more info.
+- `puppeteer` : An options object to pass to [`launch()`](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+  - `puppeteer.headless` is `true` by default.
+  - See the [Puppeteer docs for the list of available options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
+  - This is useful for disabling Chrome's sandbox for Travis via `puppeteer.args`.  See the [Puppeteer docs](https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#troubleshooting) for more info.
 
 ### snap.start( [next] )
 

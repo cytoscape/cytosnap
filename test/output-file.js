@@ -12,7 +12,9 @@ describe('Output', function(){
 
   beforeEach(function( done ){ // setup
     snap = cytosnap({
-      args: ['--no-sandbox'] // required for travis ci
+      puppeteer: {
+        args: ['--no-sandbox'] // required for travis ci
+      }
     });
 
     snap.start().then( done );
