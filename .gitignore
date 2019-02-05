@@ -1,10 +1,7 @@
 node_modules
 browser/index.pack.js
 browser/index.js
-test/img.png
-test/img.jpg
-test/img.fn.png
-test/img.lg.png
-test/out.json
-test/img.dagre.png
-test/img.cose.jpg
+test/img.*
+test/out.*
+test/*.png
+test/*.jpg
