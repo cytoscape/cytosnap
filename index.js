@@ -56,7 +56,7 @@ let browserifyBrowserSrc = function(){
   return browserSrc;
 };
 
-let Cytosnap = function( opts ){
+let Cytosnap = function( opts = {} ){
   if( !(this instanceof Cytosnap) ){
     return new Cytosnap( opts );
   }
